@@ -1,0 +1,86 @@
+---
+title: "Data Science & Solutions Assessment"
+author: "Alex Chung"
+date: "10/10/2022"
+output: html_notebook
+---
+
+```{r}
+setwd("/Users/alexchung/Downloads")
+shot_data <- read.csv("shots_data.csv")
+nrow(shot_data)
+head(shot_data)
+library(ggplot2)
+library(magrittr)
+```
+
+```{r}
+#getting shot data specific to team A and team B
+
+team_A_data <- shot_data[shot_data$team == 'Team A', ]
+team_B_data <- shot_data[shot_data$team == 'Team B', ]
+```
+
+```{r}
+#using filtering to get shot data specific to the different regions of the court
+
+corner_3_A <- shot_data[shot_data$team == 'Team A' & shot_data$y <= 7.8 & shot_data$x > 22, ]
+noncorner_3_A <- shot_data[shot_data$team == 'Team A' & shot_data$y > 7.8 & shot_data$x ** 2 + shot_data$y ** 2 > 564, ]
+
+corner_3_B <- shot_data[shot_data$team == 'Team B' & shot_data$y <= 7.8 & shot_data$x > 22, ]
+noncorner_3_B <- shot_data[shot_data$team == 'Team B' & shot_data$y > 7.8 & shot_data$x ** 2 + shot_data$y ** 2 > 564, ]
+```
+
+```{r}
+install.packages("sqldf")
+```
+
+```{r}
+#utilizing sqldf (not entirely necessary but helpful) to get all 2 point shots as the difference between the total shot data of a team and the 3 point shots attempted
+
+require(sqldf)
+res_A <- sqldf('SELECT * FROM team_A_data EXCEPT SELECT * FROM corner_3_A')
+Twopt_A <- sqldf('SELECT * FROM res EXCEPT SELECT * FROM noncorner_3_A')
+Twopt_A
+res_B <- sqldf('SELECT * FROM team_B_data EXCEPT SELECT * FROM corner_3_B')
+Twopt_B <- sqldf('SELECT * FROM res_B EXCEPT SELECT * FROM noncorner_3_B')
+Twopt_B
+```
+
+```{r}
+#creating shot distribution vector for team A
+
+Shot_distribution_A <- c()
+Shot_distribution_A[1] <- nrow(Twopt_A)/nrow(team_A_data)
+Shot_distribution_A[2] <- nrow(corner_3_A)/nrow(team_A_data)
+Shot_distribution_A[3] <- nrow(noncorner_3_A)/nrow(team_A_data)
+Shot_distribution_A
+```
+
+```{r}
+#creating shot distribution vector for team B
+
+Shot_distribution_B <- c()
+Shot_distribution_B[1] <- nrow(Twopt_B)/nrow(team_B_data)
+Shot_distribution_B[2] <- nrow(corner_3_B)/nrow(team_B_data)
+Shot_distribution_B[3] <- nrow(noncorner_3_B)/nrow(team_B_data)
+Shot_distribution_B
+```
+
+
+```{r}
+#creating effective field goal percentage vectors for teams A and B
+
+efg_A <- c()
+efg_A[1] <- sum(Twopt_A$fgmade)/nrow(Twopt_A)
+efg_A[2] <- 1.5 * sum(corner_3_A$fgmade)/nrow(corner_3_A)
+efg_A[3] <- 1.5 * sum(noncorner_3_A$fgmade)/nrow(noncorner_3_A)
+
+efg_B <- c()
+efg_B[1] <- sum(Twopt_B$fgmade)/nrow(Twopt_B)
+efg_B[2] <- 1.5 * sum(corner_3_B$fgmade)/nrow(corner_3_B)
+efg_B[3] <- 1.5 * sum(noncorner_3_B$fgmade)/nrow(noncorner_3_B)
+
+efg_A
+efg_B
+```
